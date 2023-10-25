@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Body, Post } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './create-user.dto';
+import { CreateUserDto } from './create.user.dto';
 import {
   ApiTags,
   ApiOperation,

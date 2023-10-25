@@ -6,11 +6,13 @@ import { AuthService } from './auth.service';
 import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { AuthController } from './auth.controller';
+import { SessionModule } from '../session/session.modile';
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
+    SessionModule,
     JwtModule.register({
       secret: 'yourSecretKey', // В реальном приложении используйте более сложный секрет
       signOptions: { expiresIn: '60m' },

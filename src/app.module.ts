@@ -12,19 +12,13 @@ import { AuthController } from './auth/auth.controller';
 import { LocalAuthGuard } from './auth/local-auth.guard';
 import { SessionController } from './session/session.controller';
 import { SessionModule } from './session/session.modile';
+import { databaseConfig } from './database.config'; // Измените путь к вашему файлу конфигурации
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'yourusername',
-      password: 'yourpassword',
-      database: 'yourdbname',
-      entities: [UserEntity],
-      synchronize: true,
-    }),
+    TypeOrmModule.forRoot(databaseConfig),
     TypeOrmModule.forFeature([UserEntity]),
     UserModule,
     AuthModule,
@@ -32,8 +26,13 @@ import { SessionModule } from './session/session.modile';
     JwtModule,
     SessionModule,
   ],
-  controllers: [AuthController, UserController, SessionController],
-  providers: [AuthService, JwtStrategy, LocalAuthGuard],
+  controllers: [
+    AppController,
+    AuthController,
+    UserController,
+    SessionController,
+  ],
+  providers: [AppService, AuthService, JwtStrategy, LocalAuthGuard],
   exports: [AuthService],
 })
 export class AppModule {}

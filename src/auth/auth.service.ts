@@ -1,18 +1,17 @@
-import { Injectable, Req } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../users/user.service';
 import * as bcrypt from 'bcrypt';
 import { UserEntity } from '../users/user.entity';
 import { SafeUser } from 'src/users/user.interface';
 import { SessionService } from '../session/session.service';
-import { Request } from 'express';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-    private readonly sessionService: SessionService, // Добавьте это
+    private readonly sessionService: SessionService,
   ) {}
 
   async findUserByEmail(email: string): Promise<SafeUser | null> {
@@ -20,8 +19,12 @@ export class AuthService {
     if (!user) {
       return null;
     }
-    const { ...result } = user;
-    return result;
+    return {
+      id: user.id,
+      email: user.email,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+    };
   }
 
   async validateUser(
@@ -30,14 +33,12 @@ export class AuthService {
   ): Promise<UserEntity | null> {
     const user = await this.userService.findOne(email);
     if (user && (await bcrypt.compare(password, user.password))) {
-      return user; // здесь нам неважно, что пароль включен в объект, так как это не объект ответа
+      return user;
     }
     return null;
   }
 
-  async login(@Req() req: Request, user: UserEntity) {
-    // теперь у вас есть доступ к объекту req в этом методе
-    const deviceType = req.device.type;
+  async login(user: UserEntity, deviceType: string) {
     const payload = { email: user.email, sub: user.id };
     const token = this.jwtService.sign(payload);
     await this.sessionService.create(token, user, deviceType);

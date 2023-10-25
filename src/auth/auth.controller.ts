@@ -1,4 +1,12 @@
-import { Controller, Request, Post, UseGuards, Get, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseGuards,
+  Get,
+  Req,
+  Res,
+  HttpStatus,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -8,38 +16,62 @@ import {
 import { LocalAuthGuard } from './local-auth.guard';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { SessionService } from '../session/session.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  sessionService: any;
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private sessionService: SessionService,
+  ) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
-  @ApiResponse({ status: 201, description: 'Logged in successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid credentials' })
-  async login(@Request() req) {
-    return this.authService.login(req.user, req.device.type); // Просто предположение
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Logged in successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid credentials',
+  })
+  async login(@Req() req, @Res() res) {
+    const { user, deviceType } = req;
+
+    try {
+      const loginResult = await this.authService.login(user, deviceType);
+      return res.status(HttpStatus.CREATED).json(loginResult);
+    } catch (error) {
+      return res
+        .status(HttpStatus.BAD_REQUEST)
+        .json({ message: 'Invalid credentials' });
+    }
   }
 
-  @Get('sessions')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth() // Because JWT is typically used as a Bearer token
+  @Get('sessions')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get sessions for a user' })
-  @ApiResponse({ status: 200, description: 'Sessions retrieved successfully' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Sessions retrieved successfully',
+  })
   async getSessions(@Req() req) {
     return this.sessionService.findByUser(req.user);
   }
 
-  @Post('logout')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth() // Bearer token needed for logout as well
+  @Post('logout')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Logged out successfully',
+  })
   async logout(@Req() req) {
-    await this.authService.logout(req.headers.authorization.split(' ')[1]);
+    await this.authService.logout(req.user.jwt);
     return { message: 'Logged out successfully' };
   }
 }
